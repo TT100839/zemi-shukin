@@ -36,7 +36,7 @@ input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--gree
 .prog i{display:block;height:100%;transition:width .6s}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;margin-top:6px;opacity:.95}
 .legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;background:var(--c)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;margin-bottom:21px}
 .tile{border-radius:12px;padding:8px 6px;text-align:center;border:1.5px solid var(--line);background:var(--bg);cursor:pointer;font:inherit;color:var(--ink);transition:transform .15s}
 .tile:active{transform:scale(.96)}
 .tile b{display:block;font-family:"Space Grotesk";font-size:18px;line-height:1.1}
@@ -46,17 +46,18 @@ input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--gree
 .tile.warn{border-color:var(--warn);color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--bg))}
 .tile.na{border-style:dashed;color:var(--sub)}
 .legend2{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin:6px 0 10px}
-.hero{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:18px;align-items:center;padding-top:18px;padding-bottom:18px}
+.hero{display:grid;grid-template-columns:minmax(0,.382fr) minmax(0,.618fr);gap:21px;align-items:center;padding-top:21px;padding-bottom:21px}
 #jar{height:240px;position:relative}
 #jar canvas{position:absolute;inset:0}
 .big{font-size:clamp(40px,10vw,64px);line-height:1;font-weight:700;letter-spacing:-.02em}
 .big small{display:block;font-size:.36em;opacity:.85;font-weight:500;margin-top:4px}
-.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:13px}
 .fig1{background:rgba(255,255,255,.14);border-radius:8px;padding:8px 10px;font-size:13px}
 .fig1 b{display:block;font-size:22px;font-family:"Space Grotesk",sans-serif}
-h2{font-size:22px;margin:26px 0 10px;letter-spacing:-.01em}
-.steps{display:grid;gap:10px}
-.step{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+h2{font-size:21px;margin:34px 0 13px;letter-spacing:-.01em;line-height:1.3}
+.steps{display:grid;gap:8px}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr) 10em;gap:13px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:13px 16px;background:var(--bg)}
+.step .btn{width:100%}
 .step.now{border-color:var(--green);background:var(--mist)}
 .step .dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;border:2px solid var(--line);font-family:"Space Grotesk";background:var(--bg);color:var(--ink);font-size:15px;cursor:pointer;padding:0}
 .step .dot:disabled{cursor:default}
@@ -68,7 +69,9 @@ h2{font-size:22px;margin:26px 0 10px;letter-spacing:-.01em}
 .step.now .dot{border-color:var(--green);color:var(--greenInk)}
 .step p{margin:0;font-size:13px;color:var(--sub)}
 .step b{font-size:16px}
-.btn{font:inherit;font-size:15px;font-weight:700;border:1px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px 14px;min-height:44px;cursor:pointer;white-space:nowrap}
+.btn{font:inherit;font-size:15px;font-weight:700;border:1px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px 14px;min-height:46px;cursor:pointer;white-space:nowrap;text-align:center;display:inline-flex;align-items:center;justify-content:center}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:21px}
+.pair .btn{width:100%}
 .btn.go{background:var(--ink);color:var(--bg)}
 .btn.green{background:var(--green);border-color:var(--green);color:#fff}
 .btn:active{transform:translateY(1px)}
@@ -81,7 +84,7 @@ ul.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .list li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);cursor:pointer}
 .list .code{font-family:"Space Grotesk";color:var(--sub);font-weight:700}
 .list small{display:block;color:var(--sub);font-size:13px}
-.st{font-size:13px;font-weight:700;white-space:nowrap;padding:4px 8px;border-radius:6px}
+.st{font-size:13px;font-weight:700;white-space:nowrap;padding:5px 8px;border-radius:6px;min-width:7.5em;text-align:center}
 .ok{color:var(--greenInk);background:var(--mist)}.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}.wait{color:var(--wait);background:color-mix(in srgb,var(--wait) 12%,transparent)}.na{color:var(--sub)}
 .roster li{grid-template-columns:34px minmax(0,1fr) auto auto;cursor:default}
 .tog{min-width:64px;min-height:44px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--sub);font:inherit;font-size:14px;font-weight:700}
@@ -123,7 +126,7 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
 .sum3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
 .sum3 div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--sub)}
 .sum3 b{display:block;color:var(--ink);font-size:20px;font-family:"Space Grotesk"}
-@media(max-width:600px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}.fig1 b{font-size:19px}.big{font-size:clamp(32px,9vw,44px)}.hero{grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:12px}#jar{height:170px}.mrow{grid-template-columns:36px minmax(0,1fr) 90px 34px}.mrow .fee{grid-column:2/4}.step{grid-template-columns:32px minmax(0,1fr)}.step .btn{grid-column:1/-1}}
+@media(max-width:600px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}.fig1 b{font-size:19px}.big{font-size:clamp(32px,9vw,44px)}.hero{grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:12px}#jar{height:170px}.mrow{grid-template-columns:36px minmax(0,1fr) 90px 34px}.mrow .fee{grid-column:2/4}.step{grid-template-columns:32px minmax(0,1fr);padding:13px}.step .btn{grid-column:1/-1}.hero{grid-template-columns:minmax(0,.382fr) minmax(0,.618fr)}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -173,9 +176,9 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
     <div class="hint">明細・PayPay履歴で確認できた入金だけ記録します（本人申告・スクショだけは不可）。</div>
     <div class="chips" id="payFilters"></div>
     <ul class="list" id="payList"></ul>
-    <div class="row" style="margin-top:14px">
-      <button class="btn go" id="xlsxBtn">会計Excelをダウンロード</button>
-      <button class="btn" id="copyTbl">表としてコピー</button>
+    <div class="pair">
+      <button class="btn go" id="xlsxBtn">会計Excelを保存</button>
+      <button class="btn" id="copyTbl">表をコピー</button>
     </div>
   </div>
 </section>
@@ -189,7 +192,7 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
       <div>当日集金<b class="num" id="rCash">0人</b></div>
     </div>
     <ul class="list roster" id="rosterList"></ul>
-    <div class="row" style="margin-top:14px"><button class="btn" id="copyRoster">名簿をテキストでコピー</button></div>
+    <div class="pair"><button class="btn" id="copyRoster">名簿をコピー</button><button class="btn go" id="rosterXlsx">名簿入りExcelを保存</button></div>
   </div>
 </section>
 
@@ -198,7 +201,7 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
     <h2>連絡文</h2>
     <div class="chips" id="msgKinds"></div>
     <textarea id="msgText"></textarea>
-    <div class="row" style="margin-top:10px"><button class="btn green" id="msgCopy">コピーする</button><button class="btn" id="msgReset">作り直す</button></div>
+    <div class="pair" style="margin-top:13px"><button class="btn green" id="msgCopy">コピーする</button><button class="btn" id="msgReset">作り直す</button></div>
   </div>
 </section>
 
@@ -255,12 +258,12 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
     <div class="panel">
       <b>引き継ぎ・バックアップ</b>
       <div class="hint" id="modeNote">すべてのイベント・入金記録・名簿を1つのファイルにまとめて書き出せます（写真は含みません）。次の幹事はこのファイルを読み込むだけで続きから使えます。</div>
-      <div class="row" style="margin-top:10px"><button class="btn go" id="expBtn">引き継ぎファイルを書き出す</button><label class="file btn">引き継ぎファイルを読み込む<input id="impFile" type="file" accept=".json,application/json"></label></div>
+      <div class="pair" style="margin-top:13px"><button class="btn go" id="expBtn">書き出す</button><label class="file btn">読み込む<input id="impFile" type="file" accept=".json,application/json"></label></div>
       <div class="hint" id="impMsg"></div>
     </div>
-    <div class="row" style="position:sticky;bottom:96px;background:var(--bg);padding:10px 0;border-top:1px solid var(--line)">
+    <div class="pair" style="position:sticky;bottom:96px;background:var(--bg);padding:13px 0;border-top:1px solid var(--line)">
       <button class="btn go" id="saveSet">設定を保存</button>
-      <button class="btn" id="newEv">新しいイベントを作る</button>
+      <button class="btn" id="newEv">次のイベントを作る</button>
     </div>
   </div>
 </section>
@@ -628,8 +631,8 @@ $("saveSet").onclick=async()=>{const codes=draft.members.map(m=>m.code);if(new S
   draft.items.forEach(it=>{if(it.perHead)it.qty=draft.members.length});
   if(!db){toast("保存先に接続できていません");return}
   try{await db.doc("events/"+curId).set(Object.assign({},draft,{updatedAt:new Date().toISOString()}));toast("設定を保存しました")}catch(e){toast("保存できませんでした")}};
-$("newEv").onclick=async()=>{const b=$("newEv");if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="今の名簿をコピーして作る（もう一度）";return}
-  b.dataset.c="";b.textContent="新しいイベントを作る";if(!db)return;
+$("newEv").onclick=async()=>{const b=$("newEv");if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="もう一度で作成";return}
+  b.dataset.c="";b.textContent="次のイベントを作る";if(!db)return;
   const id="e"+Date.now().toString(36),c=calc();
   const nev=Object.assign(structuredClone(ev),{name:"新しいイベント",date:"",deadline:"",paypay:"",paypayExp:"",cancel:"",paymentsPath:"events/"+id+"/payments",balance:Math.max(0,stats().carry),holder:"",createdAt:new Date().toISOString()});
   try{await db.doc("events/"+id).set(nev);await db.doc("meta/current").set({eventId:id});toast("作りました。設定を直してください")}catch(e){toast("作れませんでした")}};
@@ -678,7 +681,7 @@ async function makeXlsx(){
     await dl.save({filename:`${d}_${ev.name||"イベント"}_会計.xlsx`,data:new Blob([buf])});toast("保存しました");markStep("xlsx",true)
   }catch(e){toast(e&&e.code==="declined"?"キャンセルしました":"Excelを作れませんでした（"+((e&&(e.code||e.message))||"error")+"）")}
 }
-$("xlsxBtn").onclick=makeXlsx;
+$("xlsxBtn").onclick=makeXlsx;$("rosterXlsx").onclick=makeXlsx;
 $("copyTbl").onclick=()=>copy(["番号\t氏名\t会費\t支払方法\t入金日\t入金額\t照合記録\t確認者\t判定",...ev.members.map(m=>{const r=pays[m.code]||{};return [m.code,m.name,fee(m),r.method||"",r.date||"",r.amount||"",[r.record,r.tx].filter(Boolean).join(" / "),r.checker||"",status(m)[0]].join("\t")})].join("\n"));
 
 /* ---------- handover export / import ---------- */
