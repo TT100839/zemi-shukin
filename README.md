@@ -2,7 +2,7 @@
 
 ゼミの懇親会の幹事向けツールです。会費の計算、集金の照合、当日名簿、連絡文づくり、会計Excelの出力までを1つのページで行えます。
 
-公開ページ：`https://<GitHubのユーザー名>.github.io/zemi-shukin-note/`
+公開ページ：`https://tt100839.github.io/zemi-shukin/`
 
 ## できること
 
@@ -42,7 +42,7 @@
 
 ## GitHub Pages で公開する手順
 
-1. GitHubで新しいリポジトリ `zemi-shukin-note` を作る（Public）
+1. GitHubで新しいリポジトリ `zemi-shukin` を作る（Public）
 2. このフォルダの `index.html` `README.md` `.nojekyll` をアップロード
 3. Settings → Pages → Branch を `main` / `/(root)` にして Save
-4. 数分後に `https://<ユーザー名>.github.io/zemi-shukin-note/` で開けます
+4. 数分後に `https://tt100839.github.io/zemi-shukin/` で開けます
