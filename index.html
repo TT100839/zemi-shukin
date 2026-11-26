@@ -70,6 +70,9 @@ h2{font-size:21px;margin:34px 0 13px;letter-spacing:-.01em;line-height:1.3}
 .step p{margin:0;font-size:13px;color:var(--sub)}
 .step b{font-size:16px}
 .btn{font:inherit;font-size:15px;font-weight:700;border:1px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px 14px;min-height:46px;cursor:pointer;white-space:nowrap;text-align:center;display:inline-flex;align-items:center;justify-content:center}
+.indc{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:8px;display:grid;grid-template-columns:minmax(0,1fr) 9em;gap:13px;align-items:center}
+.indc p{margin:4px 0 0;font-size:13px;color:var(--sub);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.indc .btn{width:100%}
 .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:21px}
 .pair .btn{width:100%}
 .btn.go{background:var(--ink);color:var(--bg)}
@@ -200,6 +203,7 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
   <div class="wrap">
     <h2>連絡文</h2>
     <div class="chips" id="msgKinds"></div>
+    <div id="indList" style="display:none"></div>
     <textarea id="msgText"></textarea>
     <div class="pair" style="margin-top:13px"><button class="btn green" id="msgCopy">コピーする</button><button class="btn" id="msgReset">作り直す</button></div>
   </div>
@@ -295,6 +299,18 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
   <div class="hint" id="cMsg"></div>
 </div></div>
 
+<div class="sheet" id="billSheet"><div class="pane">
+  <h3>お店の会計</h3><div class="hint" id="bPlan"></div>
+  <label for="bAmt">実際に払った金額（円）</label><input id="bAmt" type="number" inputmode="numeric">
+  <label for="bMethod">支払方法</label><select id="bMethod"><option>クレジットカード</option><option>現金</option><option>その他</option></select>
+  <label for="bDate">支払日</label><input id="bDate" type="date">
+  <label for="bNote">メモ（追加注文・割引など）</label><input id="bNote">
+  <label>領収書の写真</label><div class="photos" id="bPhotos"></div>
+  <label class="file btn" id="bFileLbl">＋ 写真を追加<input id="bFile" type="file" accept="image/*" multiple></label>
+  <div class="hint" id="bUp"></div>
+  <div class="pair"><button class="btn" id="bClose">閉じる</button><button class="btn go" id="bSave">保存</button></div>
+</div></div>
+
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
@@ -355,7 +371,7 @@ function stats(){
   for(const m of ev.members){const [s,c]=status(m),f=fee(m);if(f>0)target++;
     if(c==="ok"){ok++;amt+=f}else if(c==="warn"){warn++;warns.push(m)}else if(c==="wait"){ if(s==="未入金"){wait++;unpaid.push(m)}else change.push(m)}}
   const plan=ev.members.reduce((a,m)=>a+fee(m),0);
-  return {ok,wait,warn,amt,target,plan,unpaid,warns,change,carry:plan-expense()};
+  return {ok,wait,warn,amt,target,plan,unpaid,warns,change,carry:plan-(Number(bill.amount)||expense())};
 }
 
 /* ---------- p5 jar ---------- */
@@ -451,6 +467,8 @@ function renderHome(){
   if(s.change.length) st.push({k:"chg",auto:true,done:false,t:"お釣りを返す",d:s.change.map(m=>m.name+"："+status(m)[0]).join("、"),b:"開く",f:()=>openPay(s.change[0])});
   st.push({k:"day",done:M("day"),t:"当日：集合場所の案内を送る",d:(ev.meet||"集合未設定")+(ev.train?"／"+ev.train:""),b:"案内をコピー",f:()=>{copy(buildMsg("day"),"当日案内をコピーしました");markStep("day",true)}});
   st.push({k:"roster",done:(inN>0&&inN===N())||M("roster"),t:"当日：名簿で出席チェック",d:`出席 ${inN}/${N()}人`,b:"名簿を開く",f:()=>go("roster")});
+  st.push({k:"bill",auto:true,done:!!bill.amount,t:bill.amount?"お店の会計：記録ずみ":"お店の会計を記録する",d:bill.amount?yen(bill.amount)+"・"+(bill.method||"")+((bill.photos||[]).length?"・領収書あり":"・領収書の写真なし"):"実際の金額と領収書の写真（予定 "+yen(expense())+"）",b:"記録する",f:()=>openBill()});
+  st.push({k:"done",done:M("done"),t:"会計チャネルに報告する",d:"収支と繰越をまとめた報告文",b:"報告文をつくる",f:()=>{msgKind="done";go("msg")}});
   st.push({k:"xlsx",done:M("xlsx"),t:"会計Excelを出して報告する",d:"雛形の形＋照合欄＋当日名簿",b:"Excelを作る",f:()=>makeXlsx()});
   const nowI=st.findIndex(x=>!x.done),doneN=st.filter(x=>x.done).length;
   $("stepCount").textContent=doneN+"/"+st.length+" 完了";
@@ -458,7 +476,7 @@ function renderHome(){
   $("steps").querySelectorAll(".btn").forEach(b=>b.onclick=()=>st[b.dataset.i].f());
   $("steps").querySelectorAll(".dot").forEach(b=>b.onclick=()=>{const x=st.find(y=>y.k===b.dataset.k);if(x.done&&!stepState[x.k]){toast("自動で完了になっている項目です");return}markStep(x.k,!x.done);if(!x.done)toast("「"+x.t+"」を完了にしました")});
 }
-let stepState={},unSteps=null;
+let stepState={},unSteps=null,bill={},unBill=null,billPhotos=[];
 async function markStep(k,v){stepState=Object.assign({},stepState,{[k]:v});renderHome();if(!db)return;try{await db.doc("events/"+curId+"/meta/steps").set(stepState)}catch(e){}}
 function renderPay(){
   const F=[["all","すべて"],["wait","未入金"],["warn","要確認"],["ok","照合済"]];
@@ -531,7 +549,7 @@ async function saveRoster(code,patch){const cur=Object.assign({},roster[code]||{
 $("copyRoster").onclick=()=>copy(["No\t氏名\t出席\tお酒\t支払い",...ev.members.map(m=>{const r=roster[m.code]||{};return [m.code,m.name,r.in?"○":"",r.drink?"○":"",fee(m)?status(m)[0]:"会費なし"].join("\t")})].join("\n"),"名簿をコピーしました");
 
 /* ---------- messages ---------- */
-const KINDS=[["fee","会費の連絡"],["due","未入金の催促"],["day","当日の案内"]];
+const KINDS=[["fee","会費の連絡"],["due","未入金の催促"],["ind","個別の催促"],["day","当日の案内"],["done","会計の報告"]];
 function payBlock(ex){const pm=ev.members.find(m=>m.code===ex)||ev.members.find(m=>fee(m)>0&&m.role==="学生")||{code:"01",name:"山田"},c=pm.code,nm=pm.name;return `**PayPayの場合**${ev.paypayExp?"（"+ev.paypayExp+"まで）":""}
 下のリンクから送り、**メッセージ欄に「番号＋名前」**を書いてください（例：${c}${nm}）。
 ${ev.paypay}${ev.paypayName?"（表示名は「"+ev.paypayName+"」ですが"+(ev.kanji||"幹事")+"です）":""}
@@ -594,10 +612,44 @@ ${u.map(m=>m.code+" "+m.name+"さん").join("／")}
 ${ev.paypay}${ev.paypayName?"（表示名は「"+ev.paypayName+"」ですが"+k2+"です）":""}
 `:""}
 よろしくお願いします！`}
+function indMsg(m){const k2=ev.kanji||"幹事";return `${m.name}さん、お疲れさまです。${k2}です。
+${ev.name}の会費${fee(m).toLocaleString()}円の入金が、まだこちらで確認できていなかったのでご連絡しました。
+${ev.paypay?"PayPay："+ev.paypay+"（メッセージ欄に「"+m.code+m.name+"」）\n":""}${ev.bank?"振込："+ev.bank+"（名義の頭に「"+m.code+"」）\n":""}当日現金でも大丈夫です。
+もし行き違いで払っていたらすみません、教えてください！`}
+function doneMsg(){const s=stats(),c=calc(),actual=Number(bill.amount)||expense(),inc=ev.members.reduce((a,m)=>a+fee(m),0)-(Number(ev.balance)||0),bal=Number(ev.balance)||0,hold=ev.members.find(m=>m.code===ev.holder);
+  return `@ALL
+${ev.name}の会計報告です。ご協力ありがとうございました。
+
+**収入** ${yen(inc+bal)}
+・学生 ${c.sFee.toLocaleString()}円 × ${c.students}名 ＝ ${yen(c.sSum)}
+${ev.members.filter(m=>m.role==="先生").map(m=>"・"+m.name+"先生 "+yen(fee(m)-(m===hold?bal:0))).join("\n")}${bal?"\n・前回残高 "+yen(bal):""}
+
+**支出** ${yen(actual)}
+・${ev.place||"お店"}（${ev.items.map(i=>i.name).join("・")}）${bill.note?"\n・"+bill.note:""}
+
+**次回への繰越** ${yen(inc+bal-actual)}（保有：${ev.kanji||"幹事"}）
+${s.unpaid.length?"\n※未入金："+s.unpaid.map(m=>m.name+"さん").join("、")+"\n":""}
+会計Excelと領収書は「${(ev.date||today()).slice(0,4)}年度.xlsx」に記入し、エビデンスと一緒にアップしました。`}
+function renderInd(){const w=$("indList"),u=stats().unpaid;w.innerHTML=u.length?"":'<div class="hint">未入金の人はいません。</div>';
+  u.forEach(m=>{const d=document.createElement("div");d.className="indc";d.innerHTML='<div><b></b><p></p></div><button class="btn green">コピー</button>';d.querySelector("b").textContent=m.code+" "+m.name;d.querySelector("p").textContent=indMsg(m);
+    d.querySelector("button").onclick=()=>{copy(indMsg(m),m.name+"さん宛てをコピーしました");markStep("due",true)};w.appendChild(d)})}
 function renderMsg(reset){$("msgKinds").innerHTML=KINDS.map(([k,t])=>`<button class="chip ${k===msgKind?"on":""}" data-k="${k}">${t}</button>`).join("");
   $("msgKinds").querySelectorAll("button").forEach(b=>b.onclick=()=>{msgKind=b.dataset.k;renderMsg(true)});
-  if(reset)$("msgText").value=buildMsg(msgKind)}
-$("msgCopy").onclick=()=>{copy($("msgText").value);markStep(msgKind==="fee"?"fee":msgKind==="day"?"day":"due",true)};$("msgReset").onclick=()=>renderMsg(true);
+  const ind=msgKind==="ind";$("indList").style.display=ind?"block":"none";$("msgText").style.display=ind?"none":"block";$("msgCopy").parentElement.style.display=ind?"none":"grid";
+  if(ind){renderInd();return}
+  if(reset)$("msgText").value=msgKind==="done"?doneMsg():buildMsg(msgKind)}
+$("msgCopy").onclick=()=>{copy($("msgText").value);markStep({fee:"fee",day:"day",done:"done"}[msgKind]||"due",true)};$("msgReset").onclick=()=>renderMsg(true);
+
+/* ---------- shop bill ---------- */
+function openBill(){$("bPlan").textContent="予定の支出 "+yen(expense())+"（"+ev.items.map(i=>i.name).join("・")+"）";
+  $("bAmt").value=bill.amount||expense();$("bMethod").value=bill.method||"クレジットカード";$("bDate").value=bill.date||ev.date||today();$("bNote").value=bill.note||"";
+  billPhotos=(bill.photos||[]).slice();renderBillPhotos();$("bUp").textContent="";$("bFileLbl").style.display=assetsNs?"inline-flex":"none";$("billSheet").classList.add("open")}
+function renderBillPhotos(){const w=$("bPhotos");w.innerHTML="";billPhotos.forEach((id,i)=>{const d=document.createElement("div");d.innerHTML='<a target="_blank" rel="noopener"><img alt="領収書"></a><button type="button">×</button>';
+  d.querySelector("a").href="/_blob/"+id;d.querySelector("img").src="/_blob/"+id;const b=d.querySelector("button");b.onclick=()=>{if(b.dataset.c==="1"){billPhotos.splice(i,1);renderBillPhotos()}else{b.dataset.c="1";b.textContent="外す?"}};w.appendChild(d)})}
+$("bFile").onchange=async e=>{const fs=[...e.target.files];e.target.value="";if(!assetsNs)return;for(const f of fs){$("bUp").textContent="アップロード中…";try{const b=await shrink(f);const r=await assetsNs.upload(b,{type:b.type||"image/jpeg"});billPhotos.push(r.id);renderBillPhotos();$("bUp").textContent=""}catch(err){$("bUp").textContent="アップロードできませんでした"}}};
+$("bClose").onclick=()=>$("billSheet").classList.remove("open");
+$("bSave").onclick=async()=>{const d={amount:Number($("bAmt").value)||0,method:$("bMethod").value,date:$("bDate").value,note:$("bNote").value.trim(),photos:billPhotos.slice(),savedAt:new Date().toISOString()};
+  bill=d;$("billSheet").classList.remove("open");renderAll();if(!db)return;try{await db.doc("events/"+curId+"/meta/bill").set(d);toast("お店の会計を記録しました")}catch(e){toast("保存できませんでした")}};
 
 /* ---------- settings ---------- */
 const SF=[["sName","name"],["sDate","date"],["sPlace","place"],["sMap","map"],["sMeet","meet"],["sTrain","train"],["sDeadline","deadline"],["sCancel","cancel"],["sKanji","kanji"],["sCar","car"],["sPaypay","paypay"],["sPaypayExp","paypayExp"],["sPaypayName","paypayName"],["sBank","bank"],["sSub","subsidy"],["sRound","round"],["sBal","balance"],["sHolder","holder"]];
@@ -665,6 +717,8 @@ async function makeXlsx(){
       row.getCell(3).value={formula:`IF(M${balRow}="✔照合済","○","")`};row.getCell(7).value=hold.code;row.getCell(8).value=p.method||null;row.getCell(10).value=a>=fee(hold)?bal:null;row.getCell(10).numFmt=YEN;row.getCell(11).value=p.record||null;row.getCell(12).value=p.checker||null;
       row.getCell(13).value={formula:`IF(J${balRow}="","未入金",IF(J${balRow}<>B${balRow},"⚠金額違い","✔照合済"))`};for(let c=1;c<=14;c++)row.getCell(c).border=B}
     ev.items.forEach((it,i)=>{const r=first+i;ws.getCell("D"+r).value=`${it.name} ×${itemQty(it)}`;ws.getCell("E"+r).value={formula:`${Number(it.price)||0}*${itemQty(it)}`};ws.getCell("E"+r).numFmt=YEN});
+    if(bill.amount&&Number(bill.amount)!==expense()){const r=first+ev.items.length;if(r<=last){ws.getCell("D"+r).value="実際の会計との差額"+(bill.note?"（"+bill.note+"）":"");ws.getCell("E"+r).value=Number(bill.amount)-expense();ws.getCell("E"+r).numFmt=YEN}}
+    if(bill.amount){const r=first+ev.items.length+1;if(r<=last){ws.getCell("D"+r).value="支払："+(bill.method||"")+" "+(bill.date||"")+((bill.photos||[]).length?"（領収書写真あり）":"")}}
     const tr=ws.getRow(tot);tr.getCell(1).value="合計";tr.getCell(2).value={formula:`SUM(B${first}:B${last})`};tr.getCell(4).value="合計";tr.getCell(5).value={formula:`SUM(E${first}:E${last})`};
     tr.getCell(3).value={formula:`IF(COUNTIF(C${first}:C${last},"○")=COUNTIF(B${first}:B${last},">0"),"○","")`};
     [1,2,3,4,5,6].forEach(c=>{tr.getCell(c).border={top:med,left:thin,bottom:med,right:thin};tr.getCell(c).font={bold:true}});tr.getCell(2).numFmt=YEN;tr.getCell(5).numFmt=YEN;
@@ -688,6 +742,7 @@ $("copyTbl").onclick=()=>copy(["番号\t氏名\t会費\t支払方法\t入金日\
 async function collectAll(){const out={app:"zemi-shukin-note",version:1,exportedAt:new Date().toISOString(),docs:{}};
   const evs=await db.collection("events").get();const meta=await db.doc("meta/current").get();if(meta.exists)out.docs["meta/current"]=meta.data();
   for(const d of evs.docs){const e=d.data();out.docs["events/"+d.id]=e;const pp=e.paymentsPath||(d.id===LEGACY_ID?"payments":"events/"+d.id+"/payments");
+    for(const mp of ["meta/steps","meta/bill"]){const x=await db.doc("events/"+d.id+"/"+mp).get();if(x.exists)out.docs["events/"+d.id+"/"+mp]=x.data()}
     for(const [col] of [[pp],["events/"+d.id+"/roster"]]){const s=await db.collection(col).get();s.docs.forEach(x=>{const v=Object.assign({},x.data());delete v.photos;out.docs[col+"/"+x.id]=v})}}
   return out}
 $("expBtn").onclick=async()=>{try{if(!dl){toast("この画面ではダウンロードできません");return}const all=await collectAll();
@@ -702,9 +757,10 @@ $("impFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!
 /* ---------- data wiring ---------- */
 function switchEvent(id){curId=id;ev=Object.assign(structuredClone(DEFAULT_EVENT),events[id]||(id===LEGACY_ID?{}:{}));
   if(!ev.paymentsPath)ev.paymentsPath=id===LEGACY_ID?"payments":"events/"+id+"/payments";
-  pays={};roster={};stepState={};if(unPay)unPay();if(unRoster)unRoster();if(unSteps)unSteps();
+  pays={};roster={};stepState={};bill={};if(unPay)unPay();if(unRoster)unRoster();if(unSteps)unSteps();if(unBill)unBill();
   if(db){unPay=db.collection(ev.paymentsPath).onSnapshot(s=>{pays={};s.docs.forEach(x=>{if(x.exists)pays[x.id]=x.data()});ready();renderAll()},err);
     unSteps=db.doc("events/"+id+"/meta/steps").onSnapshot(x=>{stepState=x.exists?x.data():{};renderHome()},err);
+    unBill=db.doc("events/"+id+"/meta/bill").onSnapshot(x=>{bill=x.exists?x.data():{};renderAll()},err);
     unRoster=db.collection("events/"+id+"/roster").onSnapshot(s=>{roster={};s.docs.forEach(x=>{if(x.exists)roster[x.id]=x.data()});renderAll()},err)}
   renderAll();if(tab==="set")renderSettings()}
 let timer=setTimeout(()=>{$("banner").style.display="block";$("banner").textContent="保存データにまだ接続できていません。電波を確認してください。"},10000);
