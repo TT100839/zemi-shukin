@@ -122,7 +122,24 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
 .photos button{position:absolute;top:2px;right:2px;border:0;border-radius:4px;background:#0b0b10;color:#fff;font-size:12px;padding:2px 6px}
 .file{display:inline-block}
 .file input{display:none}
-#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:90vw}
+#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:13px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:92vw;display:flex;gap:13px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+#toast button{border:0;background:none;color:#5fe3a1;font:inherit;font-weight:700;padding:4px 2px;cursor:pointer;white-space:nowrap}
+#toast.act{pointer-events:auto}
+.tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:0 0 8px}
+.tools select{width:8.5em;min-height:44px;font-size:14px}
+.search{position:relative}
+.search input{padding-left:38px;min-height:44px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--sub)}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:13px}
+.trio .btn{width:100%}
+.btn.line{background:#06c755;border-color:#06c755;color:#fff}
+.qr{display:grid;place-items:center;padding:13px;background:#fff;border-radius:13px;border:1px solid var(--line);margin-top:8px}
+.qr img,.qr canvas{width:180px!important;height:180px!important}
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;background:var(--panel);padding:4px;border-radius:12px;margin-top:8px}
+.seg button{border:0;background:none;font:inherit;font-weight:700;padding:10px;border-radius:9px;color:var(--sub);cursor:pointer;min-height:44px}
+.seg button.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.pasteBtn{width:100%;margin-bottom:13px}
+.empty{padding:21px;text-align:center;color:var(--sub);font-size:14px}
 #toast.show{opacity:1}
 .banner{background:color-mix(in srgb,var(--wait) 14%,var(--bg));padding:8px 12px;border-radius:8px;font-size:14px;margin:8px 0;display:none}
 .view{display:none}.view.on{display:block}
@@ -177,6 +194,9 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
   <div class="wrap">
     <h2>集金</h2>
     <div class="hint">明細・PayPay履歴で確認できた入金だけ記録します（本人申告・スクショだけは不可）。</div>
+    <button class="btn green pasteBtn" id="pasteOpen">通知・明細を貼り付けて記録</button>
+    <div class="tools"><label class="search"><span class="sr">検索</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="paySearch" type="search" placeholder="名前・番号"></label>
+      <select id="paySort" aria-label="並び替え"><option value="code">番号順</option><option value="todo">未入金が上</option><option value="name">名前順</option><option value="date">新しい順</option></select></div>
     <div class="chips" id="payFilters"></div>
     <ul class="list" id="payList"></ul>
     <div class="pair">
@@ -194,6 +214,8 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
       <div>お酒<b class="num" id="rDrink">0</b></div>
       <div>当日集金<b class="num" id="rCash">0人</b></div>
     </div>
+    <div class="tools"><label class="search"><span class="sr">検索</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="rosSearch" type="search" placeholder="名前・番号"></label>
+      <select id="rosSort" aria-label="並び替え"><option value="code">番号順</option><option value="notin">未出席が上</option><option value="unpaid">未入金が上</option><option value="name">名前順</option></select></div>
     <ul class="list roster" id="rosterList"></ul>
     <div class="pair"><button class="btn" id="copyRoster">名簿をコピー</button><button class="btn go" id="rosterXlsx">名簿入りExcelを保存</button></div>
   </div>
@@ -205,7 +227,7 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
     <div class="chips" id="msgKinds"></div>
     <div id="indList" style="display:none"></div>
     <textarea id="msgText"></textarea>
-    <div class="pair" style="margin-top:13px"><button class="btn green" id="msgCopy">コピーする</button><button class="btn" id="msgReset">作り直す</button></div>
+    <div class="trio" id="msgBtns"><button class="btn green" id="msgCopy">コピー</button><a class="btn line" id="msgLine" target="_blank" rel="noopener">LINEで送る</a><button class="btn" id="msgReset">作り直す</button></div>
   </div>
 </section>
 
@@ -292,11 +314,27 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
 </div></div>
 
 <div class="sheet" id="cashSheet"><div class="pane">
-  <h3 id="cTitle"></h3><div class="hint">現金を受け取ったら、立会人（もう1人）の名前を入れて記録します。</div>
-  <label for="cAmt">受け取った金額</label><input id="cAmt" type="number" inputmode="numeric">
-  <label for="cWit">立会人の名前</label><input id="cWit">
-  <div class="row" style="margin-top:16px"><button class="btn" id="cClose">閉じる</button><button class="btn green" id="cSave" style="flex:1">受け取りを記録</button></div>
+  <h3 id="cTitle"></h3>
+  <div class="seg" id="cSeg"><button data-m="現金" class="on">現金で受け取る</button><button data-m="PayPay">PayPayで受け取る</button></div>
+  <div id="cCashBox">
+    <label for="cAmt">受け取った金額</label><input id="cAmt" type="number" inputmode="numeric">
+    <label for="cWit">立会人の名前</label><input id="cWit" enterkeyhint="done">
+  </div>
+  <div id="cPayBox" style="display:none">
+    <div class="hint">このQRを相手に読み取ってもらい、メッセージに番号を書いて送ってもらいます。</div>
+    <div class="qr" id="cQr"></div>
+    <label for="cTx">届いたPayPayの取引番号（任意）</label><input id="cTx" inputmode="numeric">
+  </div>
+  <div class="pair"><button class="btn" id="cClose">閉じる</button><button class="btn green" id="cSave">受け取りを記録</button></div>
   <div class="hint" id="cMsg"></div>
+</div></div>
+
+<div class="sheet" id="pasteSheet"><div class="pane">
+  <h3>通知・明細を貼り付け</h3>
+  <div class="hint">PayPayの通知や楽天銀行の入金明細の文をそのまま貼ると、誰の入金かを番号から探して入力欄を埋めます。</div>
+  <label for="pasteText">ここに貼り付け</label><textarea id="pasteText" style="min-height:140px" placeholder="例：PayPay 3,600円 受け取り　メッセージ：04太田　取引番号 02407825749928525833"></textarea>
+  <div class="hint" id="pasteRes"></div>
+  <div class="pair"><button class="btn" id="pasteClose">閉じる</button><button class="btn go" id="pasteGo">読み取って開く</button></div>
 </div></div>
 
 <div class="sheet" id="billSheet"><div class="pane">
@@ -315,6 +353,7 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 {
 const LEGACY_ID="2026-11-konshinkai";
@@ -337,7 +376,10 @@ const $=id=>document.getElementById(id);
 const yen=n=>"¥"+Math.round(Number(n)||0).toLocaleString("ja-JP");
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
-function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),2200)}
+function toast(t,undo){const e=$("toast");e.innerHTML="";const sp=document.createElement("span");sp.textContent=t;e.appendChild(sp);e.classList.toggle("act",!!undo);
+  if(undo){const b=document.createElement("button");b.textContent="元に戻す";b.onclick=()=>{e.classList.remove("show","act");undo()};e.appendChild(b)}
+  e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show","act"),undo?5000:2200)}
+function buzz(){try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}
 async function copy(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"コピーしました")}catch(e){toast("コピーできませんでした。長押しで選択してください")}}
 
 /* ---------- money logic ---------- */
@@ -482,9 +524,14 @@ function renderPay(){
   const F=[["all","すべて"],["wait","未入金"],["warn","要確認"],["ok","照合済"]];
   $("payFilters").innerHTML=F.map(([k,t])=>`<button class="chip ${k===payFilter?"on":""}" data-k="${k}">${t}</button>`).join("");
   $("payFilters").querySelectorAll("button").forEach(b=>b.onclick=()=>{payFilter=b.dataset.k;renderPay()});
-  const ul=$("payList");ul.innerHTML="";
-  for(const m of ev.members){const [s,c]=status(m),r=pays[m.code]||{};
-    if(payFilter!=="all"&&!(payFilter===c||(payFilter==="wait"&&c==="wait")))continue;
+  const ul=$("payList");ul.innerHTML="";const q=($("paySearch").value||"").trim(),srt=$("paySort").value,rank={warn:0,wait:1,ok:2,na:3};
+  let list=ev.members.filter(m=>!q||m.name.includes(q)||m.code.includes(q));
+  if(srt==="todo")list.sort((a,b)=>rank[status(a)[1]]-rank[status(b)[1]]||a.code.localeCompare(b.code));
+  if(srt==="name")list.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+  if(srt==="date")list.sort((a,b)=>String((pays[b.code]||{}).savedAt||"").localeCompare(String((pays[a.code]||{}).savedAt||"")));
+  let shown=0;
+  for(const m of list){const [s,c]=status(m),r=pays[m.code]||{};
+    if(payFilter!=="all"&&!(payFilter===c||(payFilter==="wait"&&c==="wait")))continue;shown++;
     const li=document.createElement("li");
     li.innerHTML=`<span class="code"></span><span><span class="nm"></span><small></small></span><span class="st ${c}"></span>`;
     li.querySelector(".code").textContent=m.code;li.querySelector(".nm").textContent=m.name;
@@ -492,21 +539,34 @@ function renderPay(){
     li.querySelector(".st").textContent=s;
     if(fee(m)>0)li.onclick=()=>openPay(m);
     ul.appendChild(li)}
+  if(!shown)ul.innerHTML='<li class="empty">'+(q?"「"+esc(q)+"」に合う人はいません":"この条件の人はいません")+'</li>';
 }
 function renderRoster(){
-  const ul=$("rosterList");ul.innerHTML="";let inN=0,dr=0,cash=0;
-  for(const m of ev.members){const ro=roster[m.code]||{},[s,c]=status(m);if(ro.in)inN++;if(ro.drink)dr++;if(s==="未入金")cash++;
+  const ul=$("rosterList");ul.innerHTML="";let inN=0,dr=0,cash=0;const q=($("rosSearch").value||"").trim(),srt=$("rosSort").value;
+  ev.members.forEach(m=>{const ro=roster[m.code]||{};if(ro.in)inN++;if(ro.drink)dr++;if(status(m)[0]==="未入金")cash++});
+  let list=ev.members.filter(m=>!q||m.name.includes(q)||m.code.includes(q));
+  if(srt==="notin")list.sort((a,b)=>(!!(roster[a.code]||{}).in)-(!!(roster[b.code]||{}).in)||a.code.localeCompare(b.code));
+  if(srt==="unpaid")list.sort((a,b)=>(status(b)[0]==="未入金")-(status(a)[0]==="未入金")||a.code.localeCompare(b.code));
+  if(srt==="name")list.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+  if(!list.length)ul.innerHTML='<li class="empty">「'+esc(q)+'」に合う人はいません</li>';
+  for(const m of list){const ro=roster[m.code]||{},[s,c]=status(m);
     const li=document.createElement("li");
     li.innerHTML=`<span class="code"></span><span><span class="nm"></span><small></small></span><button class="tog drink">お酒</button><button class="tog in">出席</button>`;
     li.querySelector(".code").textContent=m.code;li.querySelector(".nm").textContent=m.name;
     const sm=li.querySelector("small");sm.textContent=(fee(m)?s:"会費なし")+(ro.note?"・"+ro.note:"");
     if(s==="未入金"){const b=document.createElement("button");b.className="btn green";b.style.cssText="min-height:32px;padding:2px 10px;font-size:13px;margin-left:6px";b.textContent="受取";b.onclick=e=>{e.stopPropagation();openCash(m)};sm.appendChild(b)}
     const bi=li.querySelector(".in"),bd=li.querySelector(".drink");bi.classList.toggle("on",!!ro.in);bd.classList.toggle("on",!!ro.drink);
-    bi.onclick=()=>saveRoster(m.code,{in:!ro.in});bd.onclick=()=>saveRoster(m.code,{drink:!ro.drink});
+    bi.onclick=()=>{buzz();const prev=!!ro.in;saveRoster(m.code,{in:!prev});toast(m.name+"："+(prev?"出席を外しました":"出席にしました"),()=>saveRoster(m.code,{in:prev}))};
+    bd.onclick=()=>{buzz();saveRoster(m.code,{drink:!ro.drink})};
     ul.appendChild(li)}
   $("rIn").textContent=inN+"/"+N();$("rDrink").textContent=dr;$("rCash").textContent=cash+"人";$("rCash").title=yen(cash*calc().sFee);
 }
 function renderAll(){renderHead();renderHome();renderPay();renderRoster();if(tab==="msg")renderMsg(false)}
+
+["paySearch","paySort"].forEach(id=>$(id).addEventListener("input",renderPay));["rosSearch","rosSort"].forEach(id=>$(id).addEventListener("input",renderRoster));
+/* tap outside a sheet or press Esc to close it */
+document.querySelectorAll(".sheet").forEach(sh=>sh.addEventListener("click",e=>{if(e.target===sh)sh.classList.remove("open")}));
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".sheet.open").forEach(x=>x.classList.remove("open"))});
 
 /* ---------- payment sheet ---------- */
 function setHints(){const md=$("pMethod").value,c=editing?editing.code:"";
@@ -531,17 +591,45 @@ const payRef=code=>db.doc((ev.paymentsPath||("events/"+curId+"/payments"))+"/"+c
 async function savePay(code,data){if(!db){toast("保存先に接続できていません");return false}
   try{const ref=payRef(code);if(data)await ref.set(data);else await ref.delete();return true}catch(e){toast(e&&e.code==="invalid_argument"?"保存する権限がありません":"保存できませんでした");return false}}
 $("pSave").onclick=async()=>{const d={method:$("pMethod").value,date:$("pDate").value,amount:Number($("pAmt").value)||0,record:$("pRec").value.trim(),tx:$("pTx").value.trim(),checker:$("pChk").value.trim(),photos:photos.slice(),changeReturned:$("pChg").checked,savedAt:new Date().toISOString()};
-  $("pSave").disabled=true;if(await savePay(editing.code,d)){$("paySheet").classList.remove("open");toast(editing.name+"："+statusFor(editing.code,d))}$("pSave").disabled=false};
+  const m=editing,prev=pays[m.code]?JSON.parse(JSON.stringify(pays[m.code])):null;
+  $("pSave").disabled=true;if(await savePay(m.code,d)){$("paySheet").classList.remove("open");buzz();toast(m.name+"："+statusFor(m.code,d),()=>savePay(m.code,prev).then(()=>toast("元に戻しました")))}$("pSave").disabled=false};
 function statusFor(code,d){const old=pays[code];pays[code]=d;const s=status(ev.members.find(m=>m.code===code))[0];pays[code]=old;return s}
-$("pDel").onclick=async()=>{const b=$("pDel");if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="もう一度で消去";return}if(await savePay(editing.code,null)){$("paySheet").classList.remove("open");toast("記録を消しました")}};
+$("pDel").onclick=async()=>{const b=$("pDel");if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="もう一度で消去";return}const m=editing,prev=pays[m.code]?JSON.parse(JSON.stringify(pays[m.code])):null;if(await savePay(m.code,null)){$("paySheet").classList.remove("open");toast(m.name+"の記録を消しました",()=>savePay(m.code,prev).then(()=>toast("元に戻しました")))}};
 
-/* ---------- cash quick record ---------- */
-let cashM=null;
-function openCash(m){cashM=m;$("cTitle").textContent=m.code+" "+m.name+"　"+yen(fee(m));$("cAmt").value=fee(m);$("cWit").value="";$("cMsg").textContent="";$("cashSheet").classList.add("open");setTimeout(()=>$("cWit").focus(),50)}
+/* ---------- receive on the spot (cash or PayPay QR) ---------- */
+let cashM=null,cMode="現金";
+function setCMode(m){cMode=m;$("cSeg").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));$("cCashBox").style.display=m==="現金"?"block":"none";$("cPayBox").style.display=m==="PayPay"?"block":"none";
+  if(m==="PayPay"){const q=$("cQr");q.innerHTML="";if(!ev.paypay){q.textContent="設定タブでPayPayの受け取りリンクを入れてください";return}
+    if(window.QRCode){new QRCode(q,{text:ev.paypay,width:180,height:180,correctLevel:QRCode.CorrectLevel.M})}else q.textContent=ev.paypay}}
+$("cSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setCMode(b.dataset.m));
+function openCash(m){cashM=m;$("cTitle").textContent=m.code+" "+m.name+"　"+yen(fee(m));$("cAmt").value=fee(m);$("cWit").value="";$("cTx").value="";$("cMsg").textContent="";setCMode("現金");$("cashSheet").classList.add("open");setTimeout(()=>$("cWit").focus(),60)}
 $("cClose").onclick=()=>$("cashSheet").classList.remove("open");
-$("cSave").onclick=async()=>{const w=$("cWit").value.trim();if(!w){$("cMsg").textContent="立会人の名前を入れてください";return}
-  const d={method:"現金",date:today(),amount:Number($("cAmt").value)||0,record:w,tx:"",checker:ev.kanji||"",photos:[],changeReturned:false,savedAt:new Date().toISOString()};
-  if(await savePay(cashM.code,d)){$("cashSheet").classList.remove("open");toast(cashM.name+"さんの受け取りを記録しました");if(!(roster[cashM.code]||{}).in)saveRoster(cashM.code,{in:true})}};
+$("cWit").addEventListener("keydown",e=>{if(e.key==="Enter")$("cSave").click()});
+$("cSave").onclick=async()=>{let d;
+  if(cMode==="現金"){const w=$("cWit").value.trim();if(!w){$("cMsg").textContent="立会人の名前を入れてください";$("cWit").focus();return}
+    d={method:"現金",date:today(),amount:Number($("cAmt").value)||0,record:w,tx:"",checker:ev.kanji||"",photos:[],changeReturned:false,savedAt:new Date().toISOString()}}
+  else d={method:"PayPay",date:today(),amount:fee(cashM),record:cashM.code+cashM.name+"（その場でQR）",tx:$("cTx").value.trim(),checker:ev.kanji||"",photos:[],changeReturned:false,savedAt:new Date().toISOString()};
+  const m=cashM,prev=pays[m.code]?JSON.parse(JSON.stringify(pays[m.code])):null,wasIn=!!(roster[m.code]||{}).in;
+  if(await savePay(m.code,d)){$("cashSheet").classList.remove("open");buzz();toast(m.name+"さんの受け取りを記録しました",()=>{savePay(m.code,prev);if(!wasIn)saveRoster(m.code,{in:false})});if(!wasIn)saveRoster(m.code,{in:true})}};
+
+/* ---------- paste a PayPay / bank notice to fill a record ---------- */
+function parseNotice(t){const z=t.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/，/g,",");
+  const amt=(z.match(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{3,6})\s*円/)||z.match(/[¥￥]\s*([0-9,]+)/)||[])[1];
+  const tx=(z.match(/[0-9]{14,}/g)||[]).join(" ");
+  let m=null;
+  for(const mm of z.matchAll(/(?:^|[^0-9])([0-9]{2})\s*(?![月日時分円年人])(?=[ぁ-んァ-ヶｦ-ﾟ一-龠A-Za-z（(])/g)){const c=ev.members.find(x=>x.code===mm[1]);if(c){m=c;break}}
+  if(!m)m=ev.members.find(x=>x.name.length>=2&&z.includes(x.name))||ev.members.find(x=>x.name.length>=2&&z.includes(x.name.slice(0,2)))||null;
+  const isBank=/振込|フリコミ|ﾌﾘｺﾐ|楽天銀行|入金明細/.test(z),isPay=/PayPay|ペイペイ|paypay/i.test(z);
+  const method=isPay?"PayPay":isBank?"銀行振込":"";
+  const kana=(z.match(/[0-9]{2}\s*[ァ-ヶｦ-ﾟー]{2,}/)||[])[0];
+  const msg=((z.match(/メッセージ[：:\s]*([^\n]+)/)||[])[1]||"").trim().split(/\s+/)[0]||"";
+  return {m,amount:amt?Number(amt.replace(/,/g,"")):0,tx,method,record:(method==="銀行振込"?kana:msg)||(m?m.code+m.name:"")}}
+$("pasteOpen").onclick=()=>{$("pasteText").value="";$("pasteRes").textContent="";$("pasteSheet").classList.add("open");setTimeout(()=>$("pasteText").focus(),60)};
+$("pasteClose").onclick=()=>$("pasteSheet").classList.remove("open");
+$("pasteText").addEventListener("input",()=>{const r=parseNotice($("pasteText").value);$("pasteRes").textContent=$("pasteText").value.trim()?(r.m?"→ "+r.m.code+" "+r.m.name+"さん":"→ 誰の入金か見つかりません（番号か名前が必要です）")+(r.amount?"／"+yen(r.amount):"")+(r.method?"／"+r.method:"")+(r.tx?"／取引番号あり":""):""});
+$("pasteGo").onclick=()=>{const r=parseNotice($("pasteText").value);if(!r.m){$("pasteRes").textContent="番号（例：04）か名前が入っていないため、誰の入金か分かりません";return}
+  $("pasteSheet").classList.remove("open");openPay(r.m);if(r.method)$("pMethod").value=r.method;if(r.amount)$("pAmt").value=r.amount;if(r.record)$("pRec").value=r.record;if(r.tx)$("pTx").value=r.tx;$("pDate").value=today();setHints();
+  $("pMsg").textContent="貼り付けた内容から入力しました。内容を確かめて「保存」を押してください。"};
 
 /* ---------- roster ---------- */
 async function saveRoster(code,patch){const cur=Object.assign({},roster[code]||{},patch);roster[code]=cur;renderRoster();renderHome();
@@ -631,13 +719,16 @@ ${ev.members.filter(m=>m.role==="先生").map(m=>"・"+m.name+"先生 "+yen(fee(
 ${s.unpaid.length?"\n※未入金："+s.unpaid.map(m=>m.name+"さん").join("、")+"\n":""}
 会計Excelと領収書は「${(ev.date||today()).slice(0,4)}年度.xlsx」に記入し、エビデンスと一緒にアップしました。`}
 function renderInd(){const w=$("indList"),u=stats().unpaid;w.innerHTML=u.length?"":'<div class="hint">未入金の人はいません。</div>';
-  u.forEach(m=>{const d=document.createElement("div");d.className="indc";d.innerHTML='<div><b></b><p></p></div><button class="btn green">コピー</button>';d.querySelector("b").textContent=m.code+" "+m.name;d.querySelector("p").textContent=indMsg(m);
+  u.forEach(m=>{const d=document.createElement("div");d.className="indc";d.innerHTML='<div><b></b><p></p></div><div style="display:grid;gap:6px"><button class="btn green">コピー</button><a class="btn line" target="_blank" rel="noopener">LINEで送る</a></div>';d.querySelector("a").href=lineURL(indMsg(m));d.querySelector("b").textContent=m.code+" "+m.name;d.querySelector("p").textContent=indMsg(m);
     d.querySelector("button").onclick=()=>{copy(indMsg(m),m.name+"さん宛てをコピーしました");markStep("due",true)};w.appendChild(d)})}
+const lineURL=t=>"https://line.me/R/share?text="+encodeURIComponent(t);
+function syncLine(){$("msgLine").href=lineURL($("msgText").value)}
 function renderMsg(reset){$("msgKinds").innerHTML=KINDS.map(([k,t])=>`<button class="chip ${k===msgKind?"on":""}" data-k="${k}">${t}</button>`).join("");
   $("msgKinds").querySelectorAll("button").forEach(b=>b.onclick=()=>{msgKind=b.dataset.k;renderMsg(true)});
-  const ind=msgKind==="ind";$("indList").style.display=ind?"block":"none";$("msgText").style.display=ind?"none":"block";$("msgCopy").parentElement.style.display=ind?"none":"grid";
+  const ind=msgKind==="ind";$("indList").style.display=ind?"block":"none";$("msgText").style.display=ind?"none":"block";$("msgBtns").style.display=ind?"none":"grid";
   if(ind){renderInd();return}
-  if(reset)$("msgText").value=msgKind==="done"?doneMsg():buildMsg(msgKind)}
+  if(reset)$("msgText").value=msgKind==="done"?doneMsg():buildMsg(msgKind);syncLine()}
+$("msgText").addEventListener("input",syncLine);$("msgLine").addEventListener("click",()=>markStep({fee:"fee",day:"day",done:"done"}[msgKind]||"due",true));
 $("msgCopy").onclick=()=>{copy($("msgText").value);markStep({fee:"fee",day:"day",done:"done"}[msgKind]||"due",true)};$("msgReset").onclick=()=>renderMsg(true);
 
 /* ---------- shop bill ---------- */
