@@ -73,6 +73,15 @@ h2{font-size:21px;margin:34px 0 13px;letter-spacing:-.01em;line-height:1.3}
 .indc{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:8px;display:grid;grid-template-columns:minmax(0,1fr) 9em;gap:13px;align-items:center}
 .indc p{margin:4px 0 0;font-size:13px;color:var(--sub);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .indc .btn{width:100%}
+.btn.danger{border-color:var(--warn);color:var(--warn)}
+.btn.danger.fill{background:var(--warn);color:#fff}
+.modal{align-items:center;padding:16px}
+.modal .pane{border-radius:18px;max-width:440px;animation:pop .22s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.modal h3{font-size:21px}
+.chk{display:flex;gap:10px;align-items:center;color:var(--ink);font-size:15px;margin-top:13px}
+.flash{animation:flash 1.2s ease}
+@keyframes flash{0%{background:var(--mist);box-shadow:0 0 0 8px var(--mist)}100%{background:transparent;box-shadow:0 0 0 0 transparent}}
 .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:21px}
 .pair .btn{width:100%}
 .btn.go{background:var(--ink);color:var(--bg)}
@@ -287,6 +296,11 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
       <div class="pair" style="margin-top:13px"><button class="btn go" id="expBtn">書き出す</button><label class="file btn">読み込む<input id="impFile" type="file" accept=".json,application/json"></label></div>
       <div class="hint" id="impMsg"></div>
     </div>
+    <div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
+      <b>このイベントを削除</b>
+      <div class="hint">イベントの設定・入金記録・名簿をすべて消します。</div>
+      <div class="pair"><span></span><button class="btn danger" id="delEv">削除する…</button></div>
+    </div>
     <div class="pair" style="position:sticky;bottom:96px;background:var(--bg);padding:13px 0;border-top:1px solid var(--line)">
       <button class="btn go" id="saveSet">設定を保存</button>
       <button class="btn" id="newEv">次のイベントを作る</button>
@@ -347,6 +361,25 @@ nav.tabs button.on{color:#fff;background:var(--green);font-weight:700}
   <label class="file btn" id="bFileLbl">＋ 写真を追加<input id="bFile" type="file" accept="image/*" multiple></label>
   <div class="hint" id="bUp"></div>
   <div class="pair"><button class="btn" id="bClose">閉じる</button><button class="btn go" id="bSave">保存</button></div>
+</div></div>
+
+<div class="sheet modal" id="newSheet"><div class="pane">
+  <h3>新しいイベントを作る</h3>
+  <label for="nName">イベント名</label><input id="nName" placeholder="例：忘年会">
+  <label for="nDate">開催日</label><input id="nDate" type="date">
+  <label class="chk"><input type="checkbox" id="nCopy" checked> 今の名簿と支払い先を引き継ぐ</label>
+  <label class="chk"><input type="checkbox" id="nCarry" checked> <span id="nCarryTxt">繰越を前回残高に入れる</span></label>
+  <div class="hint" id="nMsg"></div>
+  <div class="pair"><button class="btn" id="nClose">やめる</button><button class="btn green" id="nGo">作成する</button></div>
+</div></div>
+
+<div class="sheet modal" id="delSheet"><div class="pane">
+  <h3 id="dTitle">イベントを削除しますか？</h3>
+  <div class="hint" id="dInfo"></div>
+  <div class="pair"><button class="btn" id="dBackup">先に書き出す</button><span></span></div>
+  <label for="dConfirm" id="dLabel">確認のため、イベント名を入力してください</label><input id="dConfirm" autocomplete="off">
+  <div class="pair"><button class="btn" id="dClose">やめる</button><button class="btn danger fill" id="dGo" disabled>削除する</button></div>
+  <div class="hint" id="dMsg"></div>
 </div></div>
 
 <div id="toast"></div>
@@ -486,7 +519,7 @@ function renderHead(){
   $("evName").textContent=ev.name||"イベント";
   $("evMeta").textContent=[ev.date?new Date(ev.date+"T00:00:00").toLocaleDateString("ja-JP",{month:"long",day:"numeric",weekday:"short"}):"日付未設定",ev.place,N()+"人"].filter(Boolean).join("　");
   const ids=Object.keys(events);if(!ids.includes(curId))ids.unshift(curId);
-  $("evPick").innerHTML=ids.map(id=>`<option value="${esc(id)}" ${id===curId?"selected":""}>${esc((events[id]||ev).name||id)}${(events[id]||ev).date?"（"+esc((events[id]||ev).date)+"）":""}</option>`).join("");
+  $("evPick").innerHTML=ids.map(id=>`<option value="${esc(id)}" ${id===curId?"selected":""}>${esc((events[id]||ev).name||id)}${(events[id]||ev).date?"（"+esc((events[id]||ev).date)+"）":""}</option>`).join("")+'<option value="__new">＋ 新しいイベント</option>';
 }
 function renderHome(){
   const s=stats();
@@ -774,12 +807,36 @@ $("saveSet").onclick=async()=>{const codes=draft.members.map(m=>m.code);if(new S
   draft.items.forEach(it=>{if(it.perHead)it.qty=draft.members.length});
   if(!db){toast("保存先に接続できていません");return}
   try{await db.doc("events/"+curId).set(Object.assign({},draft,{updatedAt:new Date().toISOString()}));toast("設定を保存しました")}catch(e){toast("保存できませんでした")}};
-$("newEv").onclick=async()=>{const b=$("newEv");if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="もう一度で作成";return}
-  b.dataset.c="";b.textContent="次のイベントを作る";if(!db)return;
-  const id="e"+Date.now().toString(36),c=calc();
-  const nev=Object.assign(structuredClone(ev),{name:"新しいイベント",date:"",deadline:"",paypay:"",paypayExp:"",cancel:"",paymentsPath:"events/"+id+"/payments",balance:Math.max(0,stats().carry),holder:"",createdAt:new Date().toISOString()});
-  try{await db.doc("events/"+id).set(nev);await db.doc("meta/current").set({eventId:id});toast("作りました。設定を直してください")}catch(e){toast("作れませんでした")}};
-$("evPick").onchange=async()=>{const id=$("evPick").value;if(db){try{await db.doc("meta/current").set({eventId:id})}catch(e){}}switchEvent(id)};
+function openNew(){const carry=Math.max(0,stats().carry);$("nName").value="";$("nDate").value="";$("nCopy").checked=true;$("nCarry").checked=carry>0;$("nCarry").disabled=carry<=0;
+  $("nCarryTxt").textContent=carry>0?"今回の繰越 "+yen(carry)+" を前回残高に入れる":"繰越はありません";$("nMsg").textContent="";$("newSheet").classList.add("open");setTimeout(()=>$("nName").focus(),60)}
+$("newEv").onclick=openNew;$("nClose").onclick=()=>$("newSheet").classList.remove("open");
+$("nName").addEventListener("keydown",e=>{if(e.key==="Enter")$("nGo").click()});
+$("nGo").onclick=async()=>{const name=$("nName").value.trim();if(!name){$("nMsg").textContent="イベント名を入れてください";$("nName").focus();return}if(!db)return;
+  const id="e"+Date.now().toString(36),keep=$("nCopy").checked,carry=$("nCarry").checked?Math.max(0,stats().carry):0;
+  const base=keep?structuredClone(ev):structuredClone(DEFAULT_EVENT);
+  const nev=Object.assign(base,{name,date:$("nDate").value,deadline:"",paypayExp:"",cancel:"",car:keep?ev.car:"",paymentsPath:"events/"+id+"/payments",balance:carry,holder:carry?(ev.members.find(m=>ev.kanji&&m.name.startsWith(ev.kanji))||{}).code||"":"",createdAt:new Date().toISOString()});
+  if(keep)nev.members=nev.members.map(m=>Object.assign({},m));
+  $("nGo").disabled=true;
+  try{await db.doc("events/"+id).set(nev);await db.doc("meta/current").set({eventId:id});events[id]=nev;switchEvent(id);$("newSheet").classList.remove("open");
+    go("set");buzz();toast("「"+name+"」を作りました。金額とメンバーを確認してください");const h=document.querySelector("header");h.classList.remove("flash");void h.offsetWidth;h.classList.add("flash")}
+  catch(err){$("nMsg").textContent="作れませんでした"}finally{$("nGo").disabled=false}};
+$("evPick").onchange=async()=>{const id=$("evPick").value;if(id==="__new"){$("evPick").value=curId;openNew();return}if(db){try{await db.doc("meta/current").set({eventId:id})}catch(e){}}switchEvent(id);toast("「"+((events[id]||{}).name||"イベント")+"」に切り替えました")};
+
+/* ---------- delete event ---------- */
+$("delEv").onclick=()=>{const n=Object.keys(pays).length,r=Object.keys(roster).length;$("dTitle").textContent="「"+(ev.name||"イベント")+"」を削除しますか？";
+  $("dInfo").textContent="入金記録 "+n+"件・名簿 "+r+"件・設定がすべて消え、元に戻せません。残しておきたい場合は、先に書き出してください。";
+  $("dLabel").textContent="確認のため「"+(ev.name||"イベント")+"」と入力してください";$("dConfirm").value="";$("dGo").disabled=true;$("dMsg").textContent="";$("delSheet").classList.add("open");setTimeout(()=>$("dConfirm").focus(),60)};
+$("dConfirm").addEventListener("input",()=>{$("dGo").disabled=$("dConfirm").value.trim()!==(ev.name||"イベント")});
+$("dClose").onclick=()=>$("delSheet").classList.remove("open");
+$("dBackup").onclick=()=>$("expBtn").click();
+$("dGo").onclick=async()=>{if(!db)return;const id=curId,name=ev.name,pp=ev.paymentsPath||(id===LEGACY_ID?"payments":"events/"+id+"/payments");$("dGo").disabled=true;$("dMsg").textContent="削除中…";
+  try{for(const col of [pp,"events/"+id+"/roster"]){const sn=await db.collection(col).get();for(const d of sn.docs){await db.doc(col+"/"+d.id).delete();if(!LOCAL)await new Promise(r=>setTimeout(r,80))}}
+    for(const mp of ["meta/steps","meta/bill"])await db.doc("events/"+id+"/"+mp).delete();
+    await db.doc("events/"+id).delete();delete events[id];
+    const rest=Object.keys(events);let next=rest[0];
+    if(!next){next="e"+Date.now().toString(36);const blank=Object.assign(structuredClone(DEFAULT_EVENT),{paymentsPath:"events/"+next+"/payments",createdAt:new Date().toISOString()});await db.doc("events/"+next).set(blank);events[next]=blank}
+    await db.doc("meta/current").set({eventId:next});switchEvent(next);$("delSheet").classList.remove("open");go("home");toast("「"+name+"」を削除しました")}
+  catch(err){$("dMsg").textContent="削除できませんでした（"+(err&&err.code||"error")+"）";$("dGo").disabled=false}};
 
 /* ---------- Excel ---------- */
 async function makeXlsx(){
